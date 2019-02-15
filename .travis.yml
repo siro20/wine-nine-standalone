@@ -5,6 +5,9 @@ dist: xenial
 git:
   depth: false
 
+services:
+  - docker
+
 env:
   - RELEASE_TARBALL="$HOME/gallium-nine-standalone-${TRAVIS_TAG:-$TRAVIS_COMMIT}.tar.gz"
 
@@ -43,6 +46,10 @@ addons:
       - libgl1-mesa-dev:i386
       - libegl1-mesa-dev:i386
 
+before_install:
+  # create a copy of the sources
+  - tar -czf /tmp/$(git rev-parse HEAD).tar.gz .
+
 install:
   # update ninja for meson
   - wget "https://github.com/ninja-build/ninja/releases/download/v1.9.0/ninja-linux.zip"
@@ -53,9 +60,20 @@ install:
   - pip3 install --user setuptools
   - pip3 install --user --upgrade pip
   - pip3 install --user meson
+  # Get the rpmbuilder
+  - docker pull mgruener/rpmbuild
 
 script:
   - ./release.sh -o "$RELEASE_TARBALL" -- -Ddri2=true -Ddistro-independent=true
+
+after_success:
+  - mkdir -p $HOME/rpmbuild/SOURCES
+  - mkdir -p $HOME/rpmbuild/SPECS
+  - mkdir -p $HOME/rpmbuild/SRPMS
+  - cp /tmp/$(git rev-parse HEAD).tar.gz $HOME/rpmbuild/SOURCES/
+  - ./packaging/update_spec.sh
+  - cp ./packaging/wine-nine-unstable.spec $HOME/rpmbuild/SPECS/
+  - docker run -it --rm -v $HOME/rpmbuild/:/home/rpmbuild/rpmbuild:z mgruener/rpmbuild rpmbuild -bs rpmbuild/SPECS/wine-nine-unstable.spec 
 
 deploy:
   provider: releases
