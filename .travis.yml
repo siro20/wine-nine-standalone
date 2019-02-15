@@ -70,9 +70,10 @@ after_success:
   - mkdir -p $HOME/rpmbuild/SOURCES
   - mkdir -p $HOME/rpmbuild/SPECS
   - mkdir -p $HOME/rpmbuild/SRPMS
+  - mkdir -p $HOME/rpmbuild/BUILD
   - cp /tmp/$(git rev-parse HEAD).tar.gz $HOME/rpmbuild/SOURCES/
-  - ./packaging/update_spec.sh
-  - cp ./packaging/wine-nine-unstable.spec $HOME/rpmbuild/SPECS/
+  - cd ./packaging/SPEC/ && /bin/bash update_spec.sh
+  - cp ./packaging/SPEC/wine-nine-unstable.spec $HOME/rpmbuild/SPECS/
   - docker run -it --rm -v $HOME/rpmbuild/:/home/rpmbuild/rpmbuild:z mgruener/rpmbuild rpmbuild -bs rpmbuild/SPECS/wine-nine-unstable.spec 
 
 deploy:
