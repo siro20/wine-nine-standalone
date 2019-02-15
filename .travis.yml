@@ -54,6 +54,7 @@ before_install:
   - mkdir -p $HOME/rpmbuild/BUILD
   - mkdir -p $HOME/rpmbuild/RPMS
   - mkdir -p $HOME/rpmbuild/BUILDROOT
+  - chmod -R 755 $HOME/rpmbuild
   # create a copy of the sources for RPMBUILD
   - tar -czf $HOME/rpmbuild/SOURCES/$(git rev-parse HEAD).tar.gz .
 
