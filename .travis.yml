@@ -71,8 +71,6 @@ jobs:
         on:
           tags: true
 
-    - # stage name not required, will continue to use `test`
-      script: ./test 2
     - stage: deploy
       name: "Packaging"
       install:
