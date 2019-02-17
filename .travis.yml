@@ -7,67 +7,6 @@ git:
 
 jobs:
   include:
-    - stage: test
-      name: "Build test"
-      addons:
-        apt:
-          update: true
-          sources:
-            # xenial doesn't have libd3dadapter9-mesa-dev, oibaf has it in mesa-common-dev
-            - sourceline: 'ppa:oibaf/graphics-drivers'
-            # xenial doesn't have relevant winegcc fixes
-            - sourceline: 'deb https://dl.winehq.org/wine-builds/ubuntu/ xenial main'
-              key_url: 'https://dl.winehq.org/wine-builds/winehq.key'
-          packages:
-            # x86 cross compiler
-            - gcc-multilib
-            # required to update meson
-            - python3-pip
-            # winehq releases
-            - winehq-stable
-            - wine-stable-dev
-            # regular dependencies
-            - libx11-dev
-            - libx11-xcb-dev
-            - libxcb1-dev
-            - libxcb-dri3-dev
-            - libxcb-present-dev
-            - libxcb-xfixes0-dev
-            - libgl1-mesa-dev
-            - libegl1-mesa-dev
-            - libx11-dev:i386
-            - libx11-xcb-dev:i386
-            - libxcb1-dev:i386
-            - libxcb-dri3-dev:i386
-            - libxcb-present-dev:i386
-            - libxcb-xfixes0-dev:i386
-            - libgl1-mesa-dev:i386
-            - libegl1-mesa-dev:i386
-
-      env:
-        - RELEASE_TARBALL="$HOME/gallium-nine-standalone-${TRAVIS_TAG:-$TRAVIS_COMMIT}.tar.gz"
-      install:
-        # update ninja for meson
-        - wget "https://github.com/ninja-build/ninja/releases/download/v1.9.0/ninja-linux.zip"
-        - unzip -o -d build ninja-linux.zip
-        - chmod 755 build/ninja
-        - export PATH="$PWD/build:$PATH"
-        # update meson via python3-pip
-        - pip3 install --user setuptools
-        - pip3 install --user --upgrade pip
-        - pip3 install --user meson
-      script:
-        - ./release.sh -o "$RELEASE_TARBALL" -- -Ddri2=true -Ddistro-independent=true
-      deploy:
-        provider: releases
-        api_key: "$GITHUB_OAUTH_TOKEN"
-        file: "$RELEASE_TARBALL"
-        skip_cleanup: true
-        draft: true
-        overwrite: true
-        on:
-          tags: true
-
     - stage: deploy
       name: "Packaging"
       services:
@@ -100,7 +39,7 @@ jobs:
         - export PATCHLEVEL=$(git rev-list --count master)
         - export COMMITHASH=$(git rev-parse HEAD)
         - export MYCHANGELOG=$(LANG=en git log --pretty=format:"* %cd %an <%ae>%n- %s%n" --date=format:"%a %b %d %Y" -n 10| sed 's/$/ \\/')
-        - export RPMBUILDARGS=--define 'patchlevel $PATCHLEVEL' --define 'commithash $COMMITHASH' --define 'mychangelog $MYCHANGELOG'
+        - export RPMBUILDARGS="--define 'patchlevel $PATCHLEVEL' --define 'commithash $COMMITHASH' --define 'mychangelog $MYCHANGELOG'"
         - IFS=$'\n'
         - sudo docker run -it --rm -v $HOME/rpmbuild/:/home/rpmbuild/rpmbuild:z mgruener/rpmbuild rpmbuild -bs $RPMBUILDARGS --define 'dist .fc28' rpmbuild/SPECS/wine-nine-unstable.spec
         - sudo docker run -it --rm -v $HOME/rpmbuild/:/home/rpmbuild/rpmbuild:z mgruener/rpmbuild rpmbuild -bs $RPMBUILDARGS --define 'dist .fc29' rpmbuild/SPECS/wine-nine-unstable.spec
