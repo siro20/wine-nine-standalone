@@ -35,7 +35,6 @@ jobs:
         - chmod -R 0777 $HOME/rpmbuild
         # create a copy of the sources for RPMBUILD
         - tar -czf $HOME/rpmbuild/SOURCES/$(git rev-parse HEAD).tar.gz .
-        - cp ./packaging/SPEC/wine-nine-unstable.spec.tmpl $HOME/rpmbuild/SPECS/wine-nine-unstable.spec
         - export PATCHLEVEL=$(git rev-list --count master)
         - export COMMITHASH=$(git rev-parse HEAD)
         - export MYCHANGELOG=$(LANG=en git log --pretty=format:"* %cd %an <%ae>%n- %s%n" --date=format:"%a %b %d %Y" -n 10| sed 's/$/ \\/')
@@ -43,7 +42,7 @@ jobs:
         - echo "%define patchlevel $PATCHLEVEL" > $HOME/rpmbuild/SPECS/wine-nine-unstable.spec
         - echo "%define commithash $COMMITHASH" >> $HOME/rpmbuild/SPECS/wine-nine-unstable.spec
         - echo "%define mychangelog $MYCHANGELOG" >> $HOME/rpmbuild/SPECS/wine-nine-unstable.spec
-        - cat wine-nine-unstable.spec.tmpl >> $HOME/rpmbuild/SPECS/wine-nine-unstable.spec
+        - cat ./packaging/SPEC/wine-nine-unstable.spec.tmpl >> $HOME/rpmbuild/SPECS/wine-nine-unstable.spec
         - sudo docker run -it --rm -v $HOME/rpmbuild/:/home/rpmbuild/rpmbuild:z mgruener/rpmbuild rpmbuild -bs --define 'dist .fc28' rpmbuild/SPECS/wine-nine-unstable.spec
         - sudo docker run -it --rm -v $HOME/rpmbuild/:/home/rpmbuild/rpmbuild:z mgruener/rpmbuild rpmbuild -bs --define 'dist .fc29' rpmbuild/SPECS/wine-nine-unstable.spec
         - copr-cli build wine-nine-unstable $HOME/rpmbuild/SRPMS/wine-nine-unstable*.src.rpm
