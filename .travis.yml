@@ -5,48 +5,45 @@ dist: xenial
 git:
   depth: false
 
-services:
-  - docker
-
-addons:
-  apt:
-    update: true
-    sources:
-      # xenial doesn't have libd3dadapter9-mesa-dev, oibaf has it in mesa-common-dev
-      - sourceline: 'ppa:oibaf/graphics-drivers'
-      # xenial doesn't have relevant winegcc fixes
-      - sourceline: 'deb https://dl.winehq.org/wine-builds/ubuntu/ xenial main'
-        key_url: 'https://dl.winehq.org/wine-builds/winehq.key'
-    packages:
-      # x86 cross compiler
-      - gcc-multilib
-      # required to update meson
-      - python3-pip
-      # winehq releases
-      - winehq-stable
-      - wine-stable-dev
-      # regular dependencies
-      - libx11-dev
-      - libx11-xcb-dev
-      - libxcb1-dev
-      - libxcb-dri3-dev
-      - libxcb-present-dev
-      - libxcb-xfixes0-dev
-      - libgl1-mesa-dev
-      - libegl1-mesa-dev
-      - libx11-dev:i386
-      - libx11-xcb-dev:i386
-      - libxcb1-dev:i386
-      - libxcb-dri3-dev:i386
-      - libxcb-present-dev:i386
-      - libxcb-xfixes0-dev:i386
-      - libgl1-mesa-dev:i386
-      - libegl1-mesa-dev:i386
-
 jobs:
   include:
     - stage: test
       name: "Build test"
+      addons:
+        apt:
+          update: true
+          sources:
+            # xenial doesn't have libd3dadapter9-mesa-dev, oibaf has it in mesa-common-dev
+            - sourceline: 'ppa:oibaf/graphics-drivers'
+            # xenial doesn't have relevant winegcc fixes
+            - sourceline: 'deb https://dl.winehq.org/wine-builds/ubuntu/ xenial main'
+            key_url: 'https://dl.winehq.org/wine-builds/winehq.key'
+          packages:
+            # x86 cross compiler
+            - gcc-multilib
+            # required to update meson
+            - python3-pip
+            # winehq releases
+            - winehq-stable
+            - wine-stable-dev
+            # regular dependencies
+            - libx11-dev
+            - libx11-xcb-dev
+            - libxcb1-dev
+            - libxcb-dri3-dev
+            - libxcb-present-dev
+            - libxcb-xfixes0-dev
+            - libgl1-mesa-dev
+            - libegl1-mesa-dev
+            - libx11-dev:i386
+            - libx11-xcb-dev:i386
+            - libxcb1-dev:i386
+            - libxcb-dri3-dev:i386
+            - libxcb-present-dev:i386
+            - libxcb-xfixes0-dev:i386
+            - libgl1-mesa-dev:i386
+            - libegl1-mesa-dev:i386
+
       env:
         - RELEASE_TARBALL="$HOME/gallium-nine-standalone-${TRAVIS_TAG:-$TRAVIS_COMMIT}.tar.gz"
       install:
@@ -73,10 +70,21 @@ jobs:
 
     - stage: deploy
       name: "Packaging"
+      services:
+        - docker
+      addons:
+        apt:
+          update: true
+          packages:
+            # required for copr-cli
+            - python3-pip
       install:
         # Get the rpmbuilder
         - docker pull mgruener/rpmbuild
-
+        # Get copr-cli
+        - pip3 install --user setuptools
+        - pip3 install --user --upgrade pip
+        - pip3 install --user copr-cli
       script:
         # create the folder structure for RPMBUILD
         - mkdir -p $HOME/rpmbuild/SOURCES
@@ -90,6 +98,7 @@ jobs:
         - tar -czf $HOME/rpmbuild/SOURCES/$(git rev-parse HEAD).tar.gz .
         - bash -c "cd ./packaging/SPEC/; ./update_spec.sh"
         - cp ./packaging/SPEC/wine-nine-unstable.spec $HOME/rpmbuild/SPECS/
-        - sudo docker run -it --rm -v $HOME/rpmbuild/:/home/rpmbuild/rpmbuild:z mgruener/rpmbuild rpmbuild -bs rpmbuild/SPECS/wine-nine-unstable.spec
-
+        - sudo docker run -it --rm -v $HOME/rpmbuild/:/home/rpmbuild/rpmbuild:z mgruener/rpmbuild rpmbuild -bs --define 'dist .fc28' rpmbuild/SPECS/wine-nine-unstable.spec
+        - sudo docker run -it --rm -v $HOME/rpmbuild/:/home/rpmbuild/rpmbuild:z mgruener/rpmbuild rpmbuild -bs --define 'dist .fc29' rpmbuild/SPECS/wine-nine-unstable.spec
+        - copr-cli build wine-nine-unstable $HOME/rpmbuild/SRPMS/wine-nine-unstable*.src.rpm
 
