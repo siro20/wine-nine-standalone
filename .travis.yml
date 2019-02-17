@@ -17,7 +17,7 @@ jobs:
             - sourceline: 'ppa:oibaf/graphics-drivers'
             # xenial doesn't have relevant winegcc fixes
             - sourceline: 'deb https://dl.winehq.org/wine-builds/ubuntu/ xenial main'
-            key_url: 'https://dl.winehq.org/wine-builds/winehq.key'
+              key_url: 'https://dl.winehq.org/wine-builds/winehq.key'
           packages:
             # x86 cross compiler
             - gcc-multilib
